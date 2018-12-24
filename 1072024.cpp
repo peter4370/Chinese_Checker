@@ -131,7 +131,6 @@ void findReachablePoints(int index, int x, int y)
 			tmpX = reachablePoints[index][preIndex].x;
 			tmpY = reachablePoints[index][preIndex].y;
 			setSearch(tmpX, tmpY, search, 2);
-			preStart = i + 1;
 			for (int j = 0; j < 6; j++)
 			{
 				if (jumpable(tmpX, tmpY, search[j].x, search[j].y))
@@ -146,6 +145,7 @@ void findReachablePoints(int index, int x, int y)
 				}
 			}
 		}
+		preStart = preEnd+1;//下一輪的起點就是上一輪終點+1
 		preEnd = i;
 		isDone = (preEnd == preStart - 1) ? true : false;
 	}
