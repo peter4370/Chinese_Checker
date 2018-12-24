@@ -12,14 +12,14 @@ struct place
 {
 	int x;
 	int y;
-}myPiece[15];
-int board[17][17];
-struct place target = { 0,4 };
-struct place tmpPaths[15][128] = {0};
+}myPiece[15];//用來記錄自己棋子的位置
+int board[17][17];//存取棋盤
+struct place target = { 0,4 };//棋子要到達的目標
+struct place reachablePoints[15][128] = {0};//棋子可以到達的點，[棋子][點，0存取的是棋子目前位置]
 int prePaths[15][128];
 int tmpLengh[15];
 
-void readBoard()
+void readBoard()//讀取棋盤
 {
 	ifstream file;
 	file.open("board.txt");
@@ -28,7 +28,7 @@ void readBoard()
 			file >> board[i][j];
 	file.close();
 }
-void printBoard()
+void printBoard()//列出棋盤，測試用
 {
 	for (int i = 0; i < 17; i++)
 	{
@@ -39,7 +39,7 @@ void printBoard()
 		cout << endl;
 	}
 }
-void saveBoard()
+void saveBoard()//儲存棋盤，測試用
 {
 	ofstream file;
 	file.open("board.txt");
@@ -53,7 +53,7 @@ void saveBoard()
 	}
 	file.close();
 }
-void scanMyPiece(int self)
+void scanMyPiece(int self)//尋找自己的棋子並存入myPiece[]
 {
 	int index = 0;
 	for (int i = 0; i < 17; i++)
@@ -65,7 +65,7 @@ void scanMyPiece(int self)
 				index++;
 			}
 }
-int distance(int x1, int y1, int x2, int y2)
+int distance(int x1, int y1, int x2, int y2)//用移動所需最短步數來計算兩點之間距離
 {
 	int deltaX = x2 - x1;
 	int deltaY = y2 - y1;
@@ -76,7 +76,7 @@ int distance(int x1, int y1, int x2, int y2)
 			result = abs(deltaX - z) + abs(deltaY - z) + abs(z);
 	return result;
 }
-bool jumpable(int x,int y, int sX, int sY)
+bool jumpable(int x,int y, int sX, int sY)//測試從(sX, sY)是否可跳到(x,y)
 {
 	if (sX >= 0 && sX < 17 && sY >= 0 && sY < 17)
 	{
@@ -94,7 +94,7 @@ bool backward(int x, int y, int i,int index)//判斷是否走過
 {
 	for (; i >= 0; i--)
 	{
-		if (x == tmpPaths[index][i].x && y == tmpPaths[index][i].y)
+		if (x == reachablePoints[index][i].x && y == reachablePoints[index][i].y)
 			return true;
 	}
 	return false;
@@ -122,15 +122,16 @@ void calculatePath(int index,int x,int y)
 	int tmpX, tmpY;
 	struct place search[6];
 	bool done = false;
-	tmpPaths[index][0].x = x;
-	tmpPaths[index][0].y = y;
+	
+	reachablePoints[index][0].x = x;
+	reachablePoints[index][0].y = y;
 	
 	while (!done)//找出可以跳的點
 	{
 		for (preIndex = preStart; preIndex <= preEnd; preIndex++)
 		{
-			tmpX = tmpPaths[index][preIndex].x;
-			tmpY = tmpPaths[index][preIndex].y;
+			tmpX = reachablePoints[index][preIndex].x;
+			tmpY = reachablePoints[index][preIndex].y;
 			setSearch(tmpX, tmpY, search,2);
 			preStart = i+1;
 			for (int j = 0; j < 6; j++)
@@ -140,8 +141,8 @@ void calculatePath(int index,int x,int y)
 					if (!backward(search[j].x, search[j].y, i, index))
 					{
 						i++;
-						tmpPaths[index][i].x = search[j].x;
-						tmpPaths[index][i].y = search[j].y;
+						reachablePoints[index][i].x = search[j].x;
+						reachablePoints[index][i].y = search[j].y;
 						prePaths[index][i] = preIndex;
 					}
 				}
@@ -160,8 +161,8 @@ void calculatePath(int index,int x,int y)
 			if (board[search[j].x][search[j].y] == 1)
 			{
 				i++;
-				tmpPaths[index][i].x = search[j].x;
-				tmpPaths[index][i].y = search[j].y;
+				reachablePoints[index][i].x = search[j].x;
+				reachablePoints[index][i].y = search[j].y;
 				prePaths[index][i] = 0;
 			}
 		}
@@ -173,14 +174,14 @@ int score(int index, int PathIndex)
 {
 	
         int tmpLengh_backup[15];
-        strct place tmpPaths_backup[15][128];
+        struct place tmpPaths_backup[15][128];
         int board_backup[17][17];
 	for (int i = 0; i < 17; i++)//backup
 		for (int j = 0; j < 17; j++)
 			board_backup[i][j] = board[i][j];
 	for (int i = 0; i < 15; i++)
 		for (int j = 0; j < tmpLengh[i]; j++)
-			tmpPaths_backup[i][j] = tmpPaths[i][j];
+			tmpPaths_backup[i][j] = reachablePoints[i][j];
 	for (int i = 0; i < 17; i++)
 		tmpLengh_backup[i] = tmpLengh[i];
 	int result = 0;
@@ -193,8 +194,8 @@ int score(int index, int PathIndex)
 	int tmpX, tmpY;
 	struct place search[6];
 	bool done = false;
-	tmpPaths[index][0].x = myPiece[index].x;
-	tmpPaths[index][0].y = myPiece[index].y;
+	reachablePoints[index][0].x = myPiece[index].x;
+	reachablePoints[index][0].y = myPiece[index].y;
 	for (int testJ = 0; testJ < 15; testJ++)
 	{
 		if (testJ == index) continue;
@@ -204,9 +205,9 @@ int score(int index, int PathIndex)
 		int maxPath;
 			for (int j = 1; j<tmpLengh[testJ]; j++)
 			{
-				if (100 / (distance(tmpPaths[testJ][j].x, tmpPaths[testJ][j].y, target.x, target.y) + 1) - 100 / (distance(myPiece[testJ].x, myPiece[testJ].y, target.x, target.y) + 1) >= max)//用100除以距離來算分,+1避免除以零
+				if (100 / (distance(reachablePoints[testJ][j].x, reachablePoints[testJ][j].y, target.x, target.y) + 1) - 100 / (distance(myPiece[testJ].x, myPiece[testJ].y, target.x, target.y) + 1) >= max)//用100除以距離來算分,+1避免除以零
 				{
-					max = 100 / (distance(tmpPaths[testJ][j].x, tmpPaths[testJ][j].y, target.x, target.y) + 1) - 100/(distance(myPiece[testJ].x, myPiece[testJ].y, target.x, target.y)+1);
+					max = 100 / (distance(reachablePoints[testJ][j].x, reachablePoints[testJ][j].y, target.x, target.y) + 1) - 100/(distance(myPiece[testJ].x, myPiece[testJ].y, target.x, target.y)+1);
 					maxPiece = testJ;
 					maxPath = j;
 				}
@@ -216,7 +217,7 @@ int score(int index, int PathIndex)
 				//	maxPiece = testJ;
 				//	maxPath = j;
 				//}
-				if ((distance(tmpPaths[testJ][j].x, tmpPaths[testJ][j].y, target.x, target.y) < 5)&& distance(myPiece[testJ].x, myPiece[testJ].y, target.x, target.y) < 5)
+				if ((distance(reachablePoints[testJ][j].x, reachablePoints[testJ][j].y, target.x, target.y) < 5)&& distance(myPiece[testJ].x, myPiece[testJ].y, target.x, target.y) < 5)
 				{
 					max *= 10;
 					break;
@@ -229,7 +230,7 @@ int score(int index, int PathIndex)
 		tmpLengh[i] = tmpLengh_backup[i];
 	for (int i = 0; i < 15; i++)
 		for (int j = 0; j < tmpLengh[i]; j++)
-			tmpPaths[i][j] = tmpPaths_backup[i][j];
+			reachablePoints[i][j] = tmpPaths_backup[i][j];
 	for (int i = 0; i < 17; i++)
 		for (int j = 0; j < 17; j++)
 			board[i][j] =  board_backup[i][j];
@@ -242,7 +243,7 @@ void movePiece(int piece, int index)
 	path[0] = index;
 	do
 	{
-		cout << tmpPaths[piece][index].x << ' ' << tmpPaths[piece][index].x << endl;
+		
 		path[i] = prePaths[piece][index];
 		index = prePaths[piece][index];
 		i++;
@@ -254,9 +255,9 @@ void movePiece(int piece, int index)
 	saveMove << '\n';
 	for (int j = i; j >=0; j--)
 	{
-		saveMove << tmpPaths[piece][path[j]].x;
+		saveMove << reachablePoints[piece][path[j]].x;
 		saveMove << ' ';
-		saveMove << tmpPaths[piece][path[j]].y;
+		saveMove << reachablePoints[piece][path[j]].y;
 		saveMove << '\n';
 	}
 	saveMove.close();
@@ -273,7 +274,7 @@ void answer()
 			{
 			//int tmpMax = score(i,j);
 			//double tmpMax = 100. / (distance(tmpPaths[i][j].x, tmpPaths[i][j].y, target.x, target.y) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, target.x, target.y) + 1);
-			double tmpMax = score(i, j)+6.*(100. / (distance(tmpPaths[i][j].x, tmpPaths[i][j].y, target.x, target.y) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, target.x, target.y) + 1))+rand()%10;
+			double tmpMax = score(i, j)+6.*(100. / (distance(reachablePoints[i][j].x, reachablePoimts[i][j].y, target.x, target.y) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, target.x, target.y) + 1))+rand()%10;
 				if (tmpMax >= max)
 				{
 					if (distance(myPiece[i].x, myPiece[i].y, target.x, target.y) < 5)
@@ -283,7 +284,7 @@ void answer()
 					maxPiece = i;
 					maxPath = j;
 				}
-				if ((distance(myPiece[i].x, myPiece[i].y, target.x, target.y) >= 5)&&(distance(tmpPaths[i][j].x, tmpPaths[i][j].y, target.x, target.y) < 5))//移到目標範圍內
+				if ((distance(myPiece[i].x, myPiece[i].y, target.x, target.y) >= 5)&&(distance(reachablePoints[i][j].x, reachablePoints[i][j].y, target.x, target.y) < 5))//移到目標範圍內
 				{
 					max += 100;
 					maxPiece = i;
