@@ -181,7 +181,7 @@ int score(int index, int PathIndex)
 		for (int j = 0; j < 17; j++)
 			board_backup[i][j] = board[i][j];
 	for (int i = 0; i < 15; i++)
-		for (int j = 0; j < tmpLengh[i]; j++)
+		for (int j = 0; j <= tmpLengh[i]; j++)
 			reachablePoints_backup[i][j] = reachablePoints[i][j];
 	for (int i = 0; i < 15; i++)
 		tmpLengh_backup[i] = tmpLengh[i];
@@ -229,7 +229,7 @@ int score(int index, int PathIndex)
 	for (int i = 0; i < 15; i++)//還原中間修改的變數
 		tmpLengh[i] = tmpLengh_backup[i];
 	for (int i = 0; i < 15; i++)
-		for (int j = 0; j < tmpLengh[i]; j++)
+		for (int j = 0; j <= tmpLengh[i]; j++)
 			reachablePoints[i][j] = reachablePoints_backup[i][j];
 	for (int i = 0; i < 17; i++)
 		for (int j = 0; j < 17; j++)
@@ -268,6 +268,10 @@ void answer()
 #ifdef debug2024
 	cout << "shortTermTarget:" << shortTermTarget.x << ' ' << shortTermTarget.y << endl;
 #endif // 
+	struct place farthestPiece = myPiece[0];
+	for (int i = 1; i <= 15; i++)//找出距離目標最遠的棋子
+		if (distance(myPiece[i].x, myPiece[i].y, target.x, target.y) > distance(farthestPiece.x, farthestPiece.y, target.x, target.y))
+			farthestPiece = myPiece[i];
 
 	for (int i = 0; i < 15; i++)
 		findReachablePoints(i, myPiece[i].x, myPiece[i].y);
@@ -277,14 +281,21 @@ void answer()
 	for (int i = 0; i < 15; i++)
 		for (int j = 1; j <= tmpLengh[i]; j++)
 		{
-			double tmpMax = score(i, j)*(100. / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, shortTermTarget.x, shortTermTarget.y) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, shortTermTarget.x, shortTermTarget.y) + 1));
+			double tmpMax;
+			//double tmpMax = score(i, j)*(100. / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, shortTermTarget.x, shortTermTarget.y) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, shortTermTarget.x, shortTermTarget.y) + 1));
+			if (distance(myPiece[i].x, myPiece[i].y, target.x, target.y) >= 5)
+				tmpMax = score(i, j)*(100. / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, shortTermTarget.x, shortTermTarget.y) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, shortTermTarget.x, shortTermTarget.y) + 1));
+			else
+				tmpMax = (100. / (distance(myPiece[i].x, myPiece[i].y, farthestPiece.x, farthestPiece.y) + 1) - 100. / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, farthestPiece.x, farthestPiece.y) + 1)) * 100.0 / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, shortTermTarget.x, shortTermTarget.y) + 1);
+				//(100. / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, target.x,          target.y         ) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, target.x,          target.y)          + 1));
+			
 			tmpMax *= (rand() % 100 + 100) / 100;
 			if (distance(myPiece[i].x, myPiece[i].y, target.x, target.y) < 5)
-				tmpMax = 0;
+				tmpMax /= 10e10;
 			if ((distance(myPiece[i].x, myPiece[i].y, target.x, target.y) >= 5) && (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, target.x, target.y) < 5))//移到目標範圍內
 				tmpMax *= 10;//假如跳入目標範圍內 分數乘以10
 			if ((distance(myPiece[i].x, myPiece[i].y, target.x, target.y) < 5) && (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, target.x, target.y) >= 5))//移到目標範圍外
-				tmpMax = 0;//假如跳出目標範圍內 分數乘以0
+				tmpMax /= 10e10;//假如跳出目標範圍內 分數除以10
 			if (tmpMax >= max)
 			{
 				max = tmpMax;
@@ -329,8 +340,8 @@ int main(int argc, char *argv[])
 		self = *argv[1];
 	setTarget(self);
 #ifdef debug2024
-	int steps = 1;
-	while (steps++)
+	int steps = 0;
+	while (steps++ + 1)
 	{
 		cout << steps << endl;
 		for (self = 2; self <= 4; self++)
