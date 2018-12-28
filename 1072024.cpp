@@ -124,33 +124,33 @@ void findReachablePoints(int index, int x, int y)
 	struct place search[6];
 	bool isDone = false;
 
-	reachablePoints[index][0].x = x;
+	reachablePoints[index][0].x = x;//將起點存起來
 	reachablePoints[index][0].y = y;
 
-	while (!isDone)//找出可以跳的點
+	while (!isDone)//找出可以跳的點直到找不到為止
 	{
-		for (preIndex = preStart; preIndex <= preEnd; preIndex++)
+		for (preIndex = preStart; preIndex <= preEnd; preIndex++)//preIndex從preStart跑到preEnd
 		{
-			tmpX = reachablePoints[index][preIndex].x;
+			tmpX = reachablePoints[index][preIndex].x;//搜尋這個點可以跳到哪
 			tmpY = reachablePoints[index][preIndex].y;
-			setSearch(tmpX, tmpY, search, 2);
-			for (int j = 0; j < 6; j++)
+			setSearch(tmpX, tmpY, search, 2);//把要測試可不可以跳的六個座標存入search[]
+			for (int j = 0; j < 6; j++)//六個要測試的座標
 			{
-				if (jumpable(tmpX, tmpY, search[j].x, search[j].y))
+				if (jumpable(tmpX, tmpY, search[j].x, search[j].y))//檢查可不可以跳過去
 				{
-					if (!isBackward(search[j].x, search[j].y, i, index))
+					if (!isBackward(search[j].x, search[j].y, i, index))//檢查之前是不是跳過了
 					{
-						i++;
+						i++;//把可以跳且沒跳過的點存到 reachablePoint[index][i+1]
 						reachablePoints[index][i].x = search[j].x;
 						reachablePoints[index][i].y = search[j].y;
-						prePaths[index][i] = preIndex;
+						prePaths[index][i] = preIndex;//將存進去點的前一個位置的index存到prePaths
 					}
 				}
 			}
 		}
-		preStart = preEnd + 1;//下一輪的起點就是上一輪終點+1
-		preEnd = i;
-		isDone = (preEnd == preStart - 1) ? true : false;
+		preStart = preEnd + 1;//下一輪for迴圈的起點就是這輪的終點+1
+		preEnd = i;//將目前的i記錄下來，下一輪for迴圈就執行到這一輪結束
+		isDone = (preEnd == preStart - 1) ? true : false;//假如i沒有增加，就代表找不到新的點，這個while迴圈就可以結束了
 	}
 	tmpX = myPiece[index].x;//搜尋可平移的點
 	tmpY = myPiece[index].y;
