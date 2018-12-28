@@ -4,7 +4,7 @@
 #include<string>
 #include<math.h>
 #include<time.h>
-#define debug2024 //測試時定義
+//#define debug2024 //測試時定義
 using namespace std;
 
 int self = 2;//記錄自己的顏色
@@ -70,11 +70,11 @@ int distance(int x1, int y1, int x2, int y2)//用移動所需最短步數來計�
 {
 	int deltaX = x2 - x1;
 	int deltaY = y2 - y1;
-	int result = 17 * 17;
+	int result = 17 + 17;
 	int z;
-	for (z = -17; z < 17; z++)
-		if (abs(deltaX - z) + abs(deltaY - z) + abs(z) < result)
-			result = abs(deltaX - z) + abs(deltaY - z) + abs(z);
+	for (z = -17; z <= 17; z++)
+		if (abs(deltaX + z) + abs(deltaY - z) + abs(z) < result)
+			result = abs((deltaX + z)) + abs((deltaY - z)) + abs(z);
 	return result;
 }
 bool jumpable(int x, int y, int sX, int sY)//測試從(sX, sY)是否可跳到(x,y)
@@ -103,13 +103,13 @@ bool isBackward(int x, int y, int i, int piece)//判斷是否走過
 void setSearch(int x, int y, place *Search, int range)
 {
 	Search[0].x = x - range;
-	Search[0].y = y - range;
+	Search[0].y = y + range;
 	Search[1].x = x - range;
 	Search[1].y = y;
 	Search[2].x = x;
 	Search[2].y = y + range;
 	Search[3].x = x + range;
-	Search[3].y = y + range;
+	Search[3].y = y - range;
 	Search[4].x = x + range;
 	Search[4].y = y;
 	Search[5].x = x;
@@ -181,7 +181,7 @@ int score(int index, int PathIndex)
 		for (int j = 0; j < 17; j++)
 			board_backup[i][j] = board[i][j];
 	for (int i = 0; i < 15; i++)
-		for (int j = 0; j < tmpLengh[i]; j++)
+		for (int j = 0; j <= tmpLengh[i]; j++)
 			reachablePoints_backup[i][j] = reachablePoints[i][j];
 	for (int i = 0; i < 15; i++)
 		tmpLengh_backup[i] = tmpLengh[i];
@@ -229,7 +229,7 @@ int score(int index, int PathIndex)
 	for (int i = 0; i < 15; i++)//還原中間修改的變數
 		tmpLengh[i] = tmpLengh_backup[i];
 	for (int i = 0; i < 15; i++)
-		for (int j = 0; j < tmpLengh[i]; j++)
+		for (int j = 0; j <= tmpLengh[i]; j++)
 			reachablePoints[i][j] = reachablePoints_backup[i][j];
 	for (int i = 0; i < 17; i++)
 		for (int j = 0; j < 17; j++)
@@ -268,6 +268,10 @@ void answer()
 #ifdef debug2024
 	cout << "shortTermTarget:" << shortTermTarget.x << ' ' << shortTermTarget.y << endl;
 #endif // 
+	struct place farthestPiece = myPiece[0];
+	for (int i = 1; i <= 15; i++)//找出距離目標最遠的棋子
+		if (distance(myPiece[i].x, myPiece[i].y, target.x, target.y) > distance(farthestPiece.x, farthestPiece.y, target.x, target.y))
+			farthestPiece = myPiece[i];
 
 	for (int i = 0; i < 15; i++)
 		findReachablePoints(i, myPiece[i].x, myPiece[i].y);
@@ -277,14 +281,21 @@ void answer()
 	for (int i = 0; i < 15; i++)
 		for (int j = 1; j <= tmpLengh[i]; j++)
 		{
-			double tmpMax = score(i, j)*(100. / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, shortTermTarget.x, shortTermTarget.y) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, shortTermTarget.x, shortTermTarget.y) + 1));
+			double tmpMax;
+			//double tmpMax = score(i, j)*(100. / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, shortTermTarget.x, shortTermTarget.y) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, shortTermTarget.x, shortTermTarget.y) + 1));
+			if (distance(myPiece[i].x, myPiece[i].y, target.x, target.y) >= 5)
+				tmpMax = score(i, j)*(100. / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, shortTermTarget.x, shortTermTarget.y) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, shortTermTarget.x, shortTermTarget.y) + 1));
+			else
+				tmpMax = (100. / (distance(myPiece[i].x, myPiece[i].y, farthestPiece.x, farthestPiece.y) + 1) - 100. / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, farthestPiece.x, farthestPiece.y) + 1)) * 100.0 / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, shortTermTarget.x, shortTermTarget.y) + 1);
+			//(100. / (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, target.x,          target.y         ) + 1) - 100. / (distance(myPiece[i].x, myPiece[i].y, target.x,          target.y)          + 1));
+
 			tmpMax *= (rand() % 100 + 100) / 100;
 			if (distance(myPiece[i].x, myPiece[i].y, target.x, target.y) < 5)
-				tmpMax = 0;
+				tmpMax /= 10e10;
 			if ((distance(myPiece[i].x, myPiece[i].y, target.x, target.y) >= 5) && (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, target.x, target.y) < 5))//移到目標範圍內
 				tmpMax *= 10;//假如跳入目標範圍內 分數乘以10
 			if ((distance(myPiece[i].x, myPiece[i].y, target.x, target.y) < 5) && (distance(reachablePoints[i][j].x, reachablePoints[i][j].y, target.x, target.y) >= 5))//移到目標範圍外
-				tmpMax = 0;//假如跳出目標範圍內 分數乘以0
+				tmpMax /= 10e10;//假如跳出目標範圍內 分數除以10
 			if (tmpMax >= max)
 			{
 				max = tmpMax;
@@ -318,22 +329,25 @@ void debug()
 }
 void setTarget(int self)
 {
-	if (self == 2) target = { 0,4 };
-	else if (self == 3) target = { 12,16 };
-	else if (self == 4) target = { 12,4 };
+	if (self == 2) target = { 16,4 };
+	else if (self == 3) target = { 4,16 };
+	else if (self == 4) target = { 4,4 };
 }
 int main(int argc, char *argv[])
 {
 	srand(time(0));
 	if (argc >= 2)
-		self = *argv[1];
+	{
+		self = *argv[1] - '0';
+		cout << *argv[1];
+	}
 	setTarget(self);
 #ifdef debug2024
-	int steps = 1;
-	while (steps++)
+	int steps = 0;
+	while (steps++ + 1)
 	{
 		cout << steps << endl;
-		for (self = 2; self <= 4; self++)
+		for (self = 3; self <= 3; self++)
 		{
 			setTarget(self);
 			readBoard();
@@ -351,11 +365,11 @@ int main(int argc, char *argv[])
 void findShortTermTarget(int x, int y)
 
 {
-	struct place tmpTarget[15];
+	struct place tmpTarget[15] = { 0,0 };
 	int index = 0;
 	for (int i = 0; i < 17; i++)//找出可以設為短期目標的位置
 		for (int j = 0; j < 17; j++)
-			if (distance(i, j, target.x, target.y) < 5 && //與目標的距離小於等於5
+			if (distance(i, j, target.x, target.y) < 5 && //與目標的距離小於5
 				board[i][j] != self && board[i][j] != 0)
 			{
 				tmpTarget[index] = { i,j };
@@ -367,5 +381,5 @@ void findShortTermTarget(int x, int y)
 		if (distance(tmpTarget[i].x, tmpTarget[i].y, target.x, target.y) < distance(tmpTarget[min].x, tmpTarget[min].y, target.x, target.y))
 			min = i;
 	}
-	shortTermTarget = tmpTarget[min];
+	shortTermTarget = { tmpTarget[min].x , tmpTarget[min].y };
 }
